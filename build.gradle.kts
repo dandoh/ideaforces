@@ -11,6 +11,7 @@ val isCI = !System.getenv("CI").isNullOrBlank()
 buildscript {
   repositories {
     mavenCentral()
+    jcenter()
   }
   dependencies {
     classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.50")
@@ -79,4 +80,5 @@ dependencies {
   compile(kotlin("stdlib-jdk8"))
   testCompile(kotlin("test-junit"))
   testCompile("junit", "junit", "4.12")
+  compile("net.sourceforge.htmlunit:htmlunit:2.36.0")
 }

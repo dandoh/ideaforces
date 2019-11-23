@@ -3,12 +3,13 @@ package org.dandoh.ideaforces.services
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.XmlSerializerUtil
 
 
-@State(name = "Ideaforces")
+@State(name = "Ideaforces", storages = [Storage("ideaforces.xml")])
 class IdeaforcesService : PersistentStateComponent<IdeaforcesService.Data>, DumbAware {
 
   companion object {

@@ -5,18 +5,29 @@
     <idea-version since-build="190.3000"/>
 
     <description>
-        This plugin allows you to have a collection of favorite IDE Actions and choose from it.
+        Ideaforces: Run sample tests C/C++ in Codeforces
     </description>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
     <extensions defaultExtensionNs="com.intellij">
-        <projectService id="FavoriteActionsService"
+        <applicationService id="FavoriteActionsService"
                         serviceImplementation="org.dandoh.ideaforces.services.IdeaforcesService"/>
     </extensions>
 
     <actions>
+        <group id="dandoh.ideaforces.actions.IdeaforcesActionGroup"
+               text="Ideaforces">
+            <add-to-group group-id="MainMenu" anchor="before" relative-to-action="HelpMenu"/>
+            <action id="org.dandoh.ideaforces.actions.SpecifyCodeforcesURLAction"
+                    class="org.dandoh.ideaforces.actions.SpecifyCodeforcesURLAction"
+                    text="Specify Codeforces URL"
+                    description="Specify Codeforces URL of the problem associate with this file">
+                <add-to-group group-id="dandoh.ideaforces.actions.IdeaforcesActionGroup"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl L"/>
+            </action>
+        </group>
     </actions>
 
 
