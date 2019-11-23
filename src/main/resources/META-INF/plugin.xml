@@ -14,6 +14,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService id="FavoriteActionsService"
                         serviceImplementation="org.dandoh.ideaforces.services.IdeaforcesService"/>
+        <runConfigurationProducer implementation="org.dandoh.ideaforces.configuration.IdeaforcesRunConfigurationProducer"
+                                  />
     </extensions>
 
     <actions>

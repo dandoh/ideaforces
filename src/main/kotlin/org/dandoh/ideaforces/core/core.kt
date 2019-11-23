@@ -13,7 +13,7 @@ object JavaExecutor : Executor() {}
 object PythonExecutor : Executor() {}
 
 
-fun file2Executor(extension: String): Executor? {
+fun fileToExecutor(extension: String): Executor? {
   return when (extension) {
     "cc", "cpp" -> CPPExecutor
     "java" -> JavaExecutor
