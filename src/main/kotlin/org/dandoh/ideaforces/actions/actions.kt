@@ -1,14 +1,17 @@
 package org.dandoh.ideaforces.actions
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.filters.TextConsoleBuilderFactory
+import com.intellij.execution.process.OSProcessHandler
+import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.ui.content.ContentFactory
 import org.dandoh.ideaforces.core.fileToExecutor
 import org.dandoh.ideaforces.ui.SpecifyURLForm
-import org.dandoh.ideaforces.utils.logIde
-import java.nio.file.Paths
 import javax.swing.JComponent
 
 
@@ -32,16 +35,33 @@ class SpecifyCodeforcesURLAction : AnAction() {
     val dialog = SpecifyURlDialog()
     if (dialog.showAndGet()) {
       val nameWithoutExtension = virtualFile.nameWithoutExtension
-      val outputExecutablePath = Paths.get(virtualFile.parent.path, nameWithoutExtension)
 
-      val commandLine =
-          GeneralCommandLine("c++", "--help")
+      val console = TextConsoleBuilderFactory.getInstance().createBuilder(project).console
+      val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Ideaforces")
+      val content = ContentFactory.SERVICE.getInstance()
+          .createContent(console.component, nameWithoutExtension, false)
+      toolWindow.contentManager.removeAllContents(true)
+      toolWindow.contentManager.addContent(content)
+
+      val compileCommandLine =
+          GeneralCommandLine("c++", "-std=c++14", virtualFile.name, "-o", nameWithoutExtension)
               .withWorkDirectory(virtualFile.parent.path)
-      commandLine.createProcess().onExit().thenApply { process ->
-
-        val output = String(process.inputStream.readBytes())
-        logIde(output)
+      compileCommandLine.createProcess().onExit().thenApply {
+        val stdErr = String(it.errorStream.readAllBytes())
+        if (it.exitValue() == 0) {
+          console.print("Complied successfully\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+          val commandLine = GeneralCommandLine("./${nameWithoutExtension}" )
+              .withWorkDirectory(virtualFile.parent.path)
+          val handler = OSProcessHandler(commandLine)
+          console.attachToProcess(handler)
+          handler.startNotify()
+        } else {
+          console.print(stdErr, ConsoleViewContentType.ERROR_OUTPUT)
+        }
       }
+
+
+
     }
 
   }

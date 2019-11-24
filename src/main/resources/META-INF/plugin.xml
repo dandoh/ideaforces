@@ -2,7 +2,7 @@
     <id>org.dandoh.ideaforces</id>
     <name>Ideaforces</name>
     <vendor email="dainhan605@gmail.com" url="https://github.com/dandoh">Dandoh</vendor>
-    <idea-version since-build="190.3000"/>
+    <idea-version since-build="191.5000"/>
 
     <description>
         Ideaforces: Run sample tests C/C++ in Codeforces
@@ -14,8 +14,11 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService id="FavoriteActionsService"
                         serviceImplementation="org.dandoh.ideaforces.services.IdeaforcesService"/>
-        <runConfigurationProducer implementation="org.dandoh.ideaforces.configuration.IdeaforcesRunConfigurationProducer"
-                                  />
+        <toolWindow id="Ideaforces"
+                    icon="PluginIcons.ICON_CODEFORCES"
+                    anchor="bottom"
+                    factoryClass="org.dandoh.ideaforces.toolwindows.IdeaforcesToolWindowFactory"
+        />
     </extensions>
 
     <actions>
