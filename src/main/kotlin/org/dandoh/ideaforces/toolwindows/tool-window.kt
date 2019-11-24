@@ -7,13 +7,7 @@ import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 
-
 class IdeaforcesToolWindowFactory : ToolWindowFactory, DumbAware {
-
-
-  /**
-   * Only call once
-   */
   override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
     val console = TextConsoleBuilderFactory.getInstance().createBuilder(project).console
     val content = ContentFactory.SERVICE.getInstance()
