@@ -38,6 +38,12 @@
                 <add-to-group group-id="dandoh.ideaforces.actions.IdeaforcesActionGroup"/>
                 <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl l" replace-all="true"/>
             </action>
+            <action id="org.dandoh.ideaforces.actions.RunProblemTestsAction"
+                    class="org.dandoh.ideaforces.actions.RunProblemTestsAction" text="Test Problem"
+                    description="Run problem with provided tests">
+                <add-to-group group-id="dandoh.ideaforces.actions.IdeaforcesActionGroup"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl j" replace-all="true"/>
+            </action>
         </group>
     </actions>
 

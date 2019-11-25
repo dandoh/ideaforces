@@ -4,8 +4,9 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.OSProcessHandler
 import com.intellij.execution.ui.ConsoleView
 import com.intellij.execution.ui.ConsoleViewContentType
-import java.util.*
-import kotlin.concurrent.timerTask
+import org.dandoh.ideaforces.utils.updateUI
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 
 object CPRunner {
@@ -24,16 +25,26 @@ object CPRunner {
   }
 
   @Synchronized
-  fun startProcess(commandLine: GeneralCommandLine, consoleView: ConsoleView, onExit: (Process) -> Unit): Unit {
+  fun startProcess(commandLine: GeneralCommandLine) : Process {
+    val process = commandLine.createProcess()
+    addProcess(process)
+    return process
+  }
+
+
+  @Synchronized
+  fun startProcessWithConsole(commandLine: GeneralCommandLine, consoleView: ConsoleView): CompletableFuture<Process> {
     val handler = OSProcessHandler(commandLine)
     consoleView.attachToProcess(handler)
-    handler.startNotify()
     addProcess(handler.process)
-    handler.process.onExit().thenApply {
-      Timer().schedule(timerTask {
+
+    handler.startNotify()
+    return handler.process.onExit().thenApplyAsync {
+      TimeUnit.MICROSECONDS.sleep(100)
+      updateUI {
         consoleView.print("\nProcess exited with code ${it.exitValue()}\n", ConsoleViewContentType.SYSTEM_OUTPUT)
-        onExit(it)
-      }, 100)
+      }
+      return@thenApplyAsync it
     }
   }
 
