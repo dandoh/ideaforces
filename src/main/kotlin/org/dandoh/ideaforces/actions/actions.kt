@@ -152,68 +152,75 @@ class RunProblemNormalAction : CompetitiveProgrammingAction() {
 
 class RunProblemTestsAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
-    makeProblemFromAction(e) { problemSuite ->
-      val queriedUrl = IdeaforcesService.getService().getUrl(problemSuite.file.path)
+    makeProblemFromAction(e) { problem ->
+      val queriedUrl = IdeaforcesService.getService().getUrl(problem.file.path)
       val url = queriedUrl ?: askCodeforcesURL(e)?.second ?: return@makeProblemFromAction
       thread {
-        val webClient = WebClient()
-        webClient.options.isJavaScriptEnabled = false
-        webClient.options.isCssEnabled = false
-        updateUI {
-          problemSuite.console.clear()
-          problemSuite.console.print("Fetching provided tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
-        }
-        val page = webClient.getPage<HtmlPage>(url)
-        val tests = page.getFirstByXPath<HtmlElement>("//div[@class='sample-tests']")
-        val inputs = tests.getByXPath<HtmlElement>("//div[@class='input']//pre")
-            .map { it.asText().trim() }
-        val outputs = tests.getByXPath<HtmlElement>("//div[@class='output']//pre")
-            .map { it.asText().trim() }
-        val sampleTests = inputs.zip(outputs)
-        updateUI {
-          problemSuite.console.print("Running tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
-        }
-        sampleTests.forEachIndexed { id, (input, output) ->
-          val process = CPRunner.startProcess(runCommand(problemSuite.file))
-          process.onExit().thenApply {
-            if (it.exitValue() == 0) {
-              val res = String(it.inputStream.readAllBytes()).trim()
-              val got = res.split(Regex("""\s+"""))
-              val expect = output.split(Regex("""\s+"""))
+        try {
+          val webClient = WebClient()
+          webClient.options.isJavaScriptEnabled = false
+          webClient.options.isCssEnabled = false
+          updateUI {
+            problem.console.clear()
+            problem.console.print("Fetching provided tests...", ConsoleViewContentType.SYSTEM_OUTPUT)
+          }
+          val page = webClient.getPage<HtmlPage>(url)
+          val tests = page.getFirstByXPath<HtmlElement>("//div[@class='sample-tests']")
+          val inputs = tests.getByXPath<HtmlElement>("//div[@class='input']//pre")
+              .map { it.asText().trim() }
+          val outputs = tests.getByXPath<HtmlElement>("//div[@class='output']//pre")
+              .map { it.asText().trim() }
+          val sampleTests = inputs.zip(outputs)
+          updateUI {
+            problem.console.print("Done.\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+            problem.console.print("Running tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+          }
+          sampleTests.forEachIndexed { id, (input, output) ->
+            val process = CPRunner.startProcess(runCommand(problem.file))
+            process.onExit().thenApply {
+              if (it.exitValue() == 0) {
+                val res = String(it.inputStream.readAllBytes()).trim()
+                val got = res.split(Regex("""\s+"""))
+                val expect = output.split(Regex("""\s+"""))
 
-              if (got == expect) {
-                updateUI {
-                  problemSuite.console.print("Test $id: MATCHED\n", ConsoleViewContentType.USER_INPUT)
+                if (got == expect) {
+                  updateUI {
+                    problem.console.print("Test $id: MATCHED\n", ConsoleViewContentType.USER_INPUT)
+                  }
+                } else {
+                  updateUI {
+                    problem.console.print("Test $id: NOT MATCHED\n", ConsoleViewContentType.ERROR_OUTPUT)
+                    problem.console.print("Codeforces: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                    problem.console.print(output + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                    problem.console.print("Got: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                    problem.console.print(res + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                  }
                 }
               } else {
                 updateUI {
-                  problemSuite.console.print("Test $id: NOT MATCHED\n", ConsoleViewContentType.ERROR_OUTPUT)
-                  problemSuite.console.print("Codeforces: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
-                  problemSuite.console.print(output + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
-                  problemSuite.console.print("Got: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
-                  problemSuite.console.print(res + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                  problem.console.print("Test $id exited with code ${it.exitValue()}\n",
+                      ConsoleViewContentType.ERROR_OUTPUT)
                 }
               }
-
-            } else {
-              updateUI {
-                problemSuite.console.print("Test $id exited with code ${it.exitValue()}\n",
-                    ConsoleViewContentType.ERROR_OUTPUT)
-              }
             }
+            Timer().schedule(timerTask {
+              if (process.isAlive) {
+                process.destroy()
+                updateUI {
+                  problem.console.print("Test $id: Time out\n",
+                      ConsoleViewContentType.ERROR_OUTPUT)
+                }
+              }
+            }, 1000)
+            val writer = process.outputStream.writer()
+            writer.write(input);
+            writer.close()
           }
-          Timer().schedule(timerTask {
-            if (process.isAlive) {
-              process.destroy()
-              updateUI {
-                problemSuite.console.print("Test $id: Time out\n",
-                    ConsoleViewContentType.ERROR_OUTPUT)
-              }
-            }
-          }, 1000)
-          val writer = process.outputStream.writer()
-          writer.write(input);
-          writer.close()
+        } catch (e: Exception) {
+          updateUI {
+            problem.console.print("\nCouldn't run Codeforces test, perhaps check your problem URL or internet " +
+                "connection?", ConsoleViewContentType.ERROR_OUTPUT)
+          }
         }
       }.start()
     }
