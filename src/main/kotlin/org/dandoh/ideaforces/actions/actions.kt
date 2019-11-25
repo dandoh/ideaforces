@@ -62,17 +62,12 @@ class SpecifyURLDialog(initUrl: String?) : DialogWrapper(true) {
   val form = SpecifyURLForm()
 
   init {
-    form.url.text = initUrl
+    form.url.text = initUrl;
     super.init()
   }
 
-  override fun getPreferredFocusedComponent(): JComponent? {
-    return form.url
-  }
-
-  override fun createCenterPanel(): JComponent? {
-    return form.content
-  }
+  override fun getPreferredFocusedComponent(): JComponent? = form.url
+  override fun createCenterPanel(): JComponent? = form.content
 
   override fun doValidate(): ValidationInfo? {
     val url = form.url.text

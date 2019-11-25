@@ -5,7 +5,7 @@
     <idea-version since-build="191.5000"/>
 
     <description>
-        Ideaforces: Run sample tests C/C++ in Codeforces
+        Ideaforces: Codeforces plugin for Jetbrains IDEs
     </description>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html

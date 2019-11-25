@@ -32,15 +32,6 @@ object CPRunner {
   }
 
   @Synchronized
-  fun startProcessWithConsole1(commandLine: GeneralCommandLine, consoleView: ConsoleView): OSProcessHandler {
-    val handler = OSProcessHandler(commandLine)
-    consoleView.attachToProcess(handler)
-    addProcess(handler.process)
-    handler.startNotify()
-    return handler
-  }
-
-  @Synchronized
   fun startProcessWithConsole(commandLine: GeneralCommandLine, consoleView: ConsoleView): CompletableFuture<Process> {
     val handler = OSProcessHandler(commandLine)
     consoleView.attachToProcess(handler)
