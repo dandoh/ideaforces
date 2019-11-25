@@ -182,9 +182,9 @@ class RunProblemTestsAction : CompetitiveProgrammingAction() {
           val process = CPRunner.startProcess(runCommand(problemSuite.file))
           process.onExit().thenApply {
             if (it.exitValue() == 0) {
-              val res = String(it.inputStream.readAllBytes())
-              val got = res.trim().split(Regex("""\s+"""))
-              val expect = output.trim().split(Regex("""\s+"""))
+              val res = String(it.inputStream.readAllBytes()).trim()
+              val got = res.split(Regex("""\s+"""))
+              val expect = output.split(Regex("""\s+"""))
 
               if (got == expect) {
                 updateUI {
@@ -193,7 +193,7 @@ class RunProblemTestsAction : CompetitiveProgrammingAction() {
               } else {
                 updateUI {
                   problemSuite.console.print("Test $id: NOT MATCHED\n", ConsoleViewContentType.ERROR_OUTPUT)
-                  problemSuite.console.print("Expect: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                  problemSuite.console.print("Codeforces: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
                   problemSuite.console.print(output + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
                   problemSuite.console.print("Got: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
                   problemSuite.console.print(res + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
@@ -211,7 +211,7 @@ class RunProblemTestsAction : CompetitiveProgrammingAction() {
             if (process.isAlive) {
               process.destroy()
               updateUI {
-                problemSuite.console.print("Test $id: Time out",
+                problemSuite.console.print("Test $id: Time out\n",
                     ConsoleViewContentType.ERROR_OUTPUT)
               }
             }
