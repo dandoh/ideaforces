@@ -18,12 +18,13 @@ import org.dandoh.ideaforces.core.CPRunner
 import org.dandoh.ideaforces.services.IdeaforcesService
 import org.dandoh.ideaforces.toolwindows.IdeaforcesToolWindowFactory
 import org.dandoh.ideaforces.ui.SpecifyURLForm
-import org.dandoh.ideaforces.utils.logIde
 import org.dandoh.ideaforces.utils.updateUI
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
+import java.util.*
 import javax.swing.JComponent
 import kotlin.concurrent.thread
+import kotlin.concurrent.timerTask
 
 val codeforcesURLPattern = Regex("""(http|https)://(www\.)?codeforces\.com/contest/\d+/problem/[A-Z](\?.+=.+)?""")
 
@@ -107,7 +108,7 @@ abstract class CompetitiveProgrammingAction : AnAction() {
   }
 }
 
-data class ProblemSuite(val file: VirtualFile, val consoleViewImpl: ConsoleViewImpl)
+data class ProblemSuite(val file: VirtualFile, val console: ConsoleViewImpl)
 
 fun makeProblemFromAction(e: AnActionEvent, onSuccess: (ProblemSuite) -> Unit) {
   val project = e.project ?: return
@@ -120,8 +121,6 @@ fun makeProblemFromAction(e: AnActionEvent, onSuccess: (ProblemSuite) -> Unit) {
             .createContent(consoleView.component, file.nameWithoutExtension, false)
         toolWindow.contentManager.removeAllContents(true)
         toolWindow.contentManager.addContent(content)
-        toolWindow.contentManager.requestFocus(content, true)
-        consoleView.editor.contentComponent.requestFocusInWindow()
         consoleView.editor.contentComponent.addKeyListener(object : KeyListener {
           override fun keyTyped(e: KeyEvent) {}
           override fun keyReleased(e: KeyEvent) {}
@@ -150,38 +149,76 @@ class SpecifyCodeforcesURLAction : CompetitiveProgrammingAction() {
 class RunProblemNormalAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
     makeProblemFromAction(e) {
-      CPRunner.startProcessWithConsole(runCommand(it.file), it.consoleViewImpl)
+      CPRunner.startProcessWithConsole(runCommand(it.file), it.console)
+      it.console.editor.contentComponent.requestFocusInWindow()
     }
   }
 }
 
 class RunProblemTestsAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
-    makeProblemFromAction(e) {
-      val queriedUrl = IdeaforcesService.getService().getUrl(it.file.path)
+    makeProblemFromAction(e) { problemSuite ->
+      val queriedUrl = IdeaforcesService.getService().getUrl(problemSuite.file.path)
       val url = queriedUrl ?: askCodeforcesURL(e)?.second ?: return@makeProblemFromAction
       thread {
         val webClient = WebClient()
         webClient.options.isJavaScriptEnabled = false
         webClient.options.isCssEnabled = false
         updateUI {
-          it.consoleViewImpl.clear()
-          it.consoleViewImpl.print("Fetching provided tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+          problemSuite.console.clear()
+          problemSuite.console.print("Fetching provided tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
         }
-        try {
-          val page = webClient.getPage<HtmlPage>(url)
-          val sampleTests = page.getByXPath<HtmlElement>("//div[@class='sample-test']")
-          updateUI {
-            it.consoleViewImpl.print("Running test...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
-          }
-          sampleTests.forEach {
-            val input = it.getFirstByXPath<HtmlElement>("div[@class='input']//pre").asText()
-            val output = it.getFirstByXPath<HtmlElement>("div[@class='output']//pre").asText()
-            logIde(input.trim())
-            logIde(output.trim())
-          }
-        } catch (e: Exception) {
+        val page = webClient.getPage<HtmlPage>(url)
+        val tests = page.getFirstByXPath<HtmlElement>("//div[@class='sample-tests']")
+        val inputs = tests.getByXPath<HtmlElement>("//div[@class='input']//pre")
+            .map { it.asText().trim() }
+        val outputs = tests.getByXPath<HtmlElement>("//div[@class='output']//pre")
+            .map { it.asText().trim() }
+        val sampleTests = inputs.zip(outputs)
+        updateUI {
+          problemSuite.console.print("Running tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+        }
+        sampleTests.forEachIndexed { id, (input, output) ->
+          val process = CPRunner.startProcess(runCommand(problemSuite.file))
+          process.onExit().thenApply {
+            if (it.exitValue() == 0) {
+              val res = String(it.inputStream.readAllBytes())
+              val got = res.trim().split(Regex("""\s+"""))
+              val expect = output.trim().split(Regex("""\s+"""))
 
+              if (got == expect) {
+                updateUI {
+                  problemSuite.console.print("Test $id: MATCHED\n", ConsoleViewContentType.USER_INPUT)
+                }
+              } else {
+                updateUI {
+                  problemSuite.console.print("Test $id: NOT MATCHED\n", ConsoleViewContentType.ERROR_OUTPUT)
+                  problemSuite.console.print("Expect: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                  problemSuite.console.print(output + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                  problemSuite.console.print("Got: \n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                  problemSuite.console.print(res + "\n", ConsoleViewContentType.SYSTEM_OUTPUT)
+                }
+              }
+
+            } else {
+              updateUI {
+                problemSuite.console.print("Test $id exited with code ${it.exitValue()}\n",
+                    ConsoleViewContentType.ERROR_OUTPUT)
+              }
+            }
+          }
+          Timer().schedule(timerTask {
+            if (process.isAlive) {
+              process.destroy()
+              updateUI {
+                problemSuite.console.print("Test $id: Time out",
+                    ConsoleViewContentType.ERROR_OUTPUT)
+              }
+            }
+          }, 1000)
+          val writer = process.outputStream.writer()
+          writer.write(input);
+          writer.close()
         }
       }.start()
     }
