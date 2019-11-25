@@ -2,38 +2,38 @@ package org.dandoh.ideaforces.services
 
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.ServiceManager
-import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.DumbAware
-import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.XmlSerializerUtil
 
 
-@State(name = "Ideaforces", storages = [Storage("ideaforces.xml")])
-class IdeaforcesService : PersistentStateComponent<IdeaforcesService.Data>, DumbAware {
+@State(name = "IdeaforcesService", storages = [Storage(value = "ideaforces.xml")])
+class IdeaforcesService : PersistentStateComponent<IdeaforcesService>, DumbAware {
 
   companion object {
-    fun getService(project: Project): IdeaforcesService {
-      return ServiceManager
-          .getService(project, IdeaforcesService::class.java)
+    fun getService(): IdeaforcesService {
+      return ServiceManager.getService(IdeaforcesService::class.java)
     }
   }
 
-  /**
-   * Persistent
-   */
-  data class Data(val counter: Int) {
-    constructor() : this(3)
+  var problem2Url: Map<String, String> = mapOf()
+
+
+  fun getUrl(path: String): String? {
+    return problem2Url[path]
   }
 
-  private val data = Data();
-
-  override fun getState(): Data? {
-    return data.copy()
+  fun updateUrl(path: String, url: String) {
+    problem2Url = problem2Url.plus(path to url)
   }
 
-  override fun loadState(state: Data) {
-    XmlSerializerUtil.copyBean(state, data);
+  override fun getState(): IdeaforcesService? {
+    return this;
+  }
+
+  override fun loadState(state: IdeaforcesService) {
+    XmlSerializerUtil.copyBean(state, this);
   }
 
 }

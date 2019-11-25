@@ -13,7 +13,7 @@
     <depends>com.intellij.modules.platform</depends>
     <extensions defaultExtensionNs="com.intellij">
         <applicationService id="FavoriteActionsService"
-                        serviceImplementation="org.dandoh.ideaforces.services.IdeaforcesService"/>
+                            serviceImplementation="org.dandoh.ideaforces.services.IdeaforcesService"/>
         <toolWindow id="Ideaforces"
                     icon="PluginIcons.ICON_CODEFORCES"
                     anchor="bottom"
@@ -30,7 +30,13 @@
                     text="Specify Codeforces URL"
                     description="Specify Codeforces URL of the problem associate with this file">
                 <add-to-group group-id="dandoh.ideaforces.actions.IdeaforcesActionGroup"/>
-                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl L"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl h" replace-all="true" />
+            </action>
+            <action id="org.dandoh.ideaforces.actions.RunProblemNormalAction"
+                    class="org.dandoh.ideaforces.actions.RunProblemNormalAction" text="Run Problem"
+                    description="Run problem">
+                <add-to-group group-id="dandoh.ideaforces.actions.IdeaforcesActionGroup"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl l" replace-all="true"/>
             </action>
         </group>
     </actions>
