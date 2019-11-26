@@ -1,4 +1,4 @@
-<h3>Ideaforces - Codeforces contest environment for Jetbrains SDK</h3>
+<h3>Ideaforces - Codeforces contest environment for Jetbrains IDEs</h3>
 <h4>Features:</h4>
 <ul>
     <li>Run problem</li>
