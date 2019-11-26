@@ -44,6 +44,12 @@
                 <add-to-group group-id="dandoh.ideaforces.actions.IdeaforcesActionGroup"/>
                 <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl j" replace-all="true"/>
             </action>
+            <action id="org.dandoh.ideaforces.actions.StopAllProcessesAction"
+                    class="org.dandoh.ideaforces.actions.StopAllProcessesAction" text="Stop All"
+                    description="Stop all running instances">
+                <add-to-group group-id="dandoh.ideaforces.actions.IdeaforcesActionGroup"/>
+                <keyboard-shortcut keymap="$default" first-keystroke="shift ctrl S"/>
+            </action>
         </group>
     </actions>
 

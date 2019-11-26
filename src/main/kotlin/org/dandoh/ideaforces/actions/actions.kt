@@ -7,13 +7,14 @@ import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.filters.TextConsoleBuilderFactory
 import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.execution.ui.ConsoleViewContentType
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.content.ContentFactory
 import org.dandoh.ideaforces.core.CPRunner
 import org.dandoh.ideaforces.services.IdeaforcesService
 import org.dandoh.ideaforces.toolwindows.IdeaforcesToolWindowFactory
@@ -103,11 +104,11 @@ fun makeProblemFromAction(e: AnActionEvent, onSuccess: (ProblemSuite) -> Unit) {
   val project = e.project ?: return
   val toolWindow = IdeaforcesToolWindowFactory.getToolWindow(project)
   val file = FileEditorManager.getInstance(project).selectedEditor?.file ?: return
+  FileDocumentManager.getInstance().saveAllDocuments()
   when (val consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).console) {
     is ConsoleViewImpl ->
       toolWindow.show {
-        val content = ContentFactory.SERVICE.getInstance()
-            .createContent(consoleView.component, file.nameWithoutExtension, false)
+        val content = IdeaforcesToolWindowFactory.createToolWindowContent(consoleView, file.nameWithoutExtension)
         toolWindow.contentManager.removeAllContents(true)
         toolWindow.contentManager.addContent(content)
         consoleView.editor.contentComponent.addKeyListener(object : KeyListener {
@@ -130,6 +131,9 @@ fun makeProblemFromAction(e: AnActionEvent, onSuccess: (ProblemSuite) -> Unit) {
   }
 }
 
+/**
+ * Specify URL Action
+ */
 class SpecifyCodeforcesURLAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
@@ -143,6 +147,23 @@ class SpecifyCodeforcesURLAction : CompetitiveProgrammingAction() {
 
 }
 
+/**
+ * Stop all processes
+ */
+class StopAllProcessesAction : AnAction("Stop All",
+    "Stop all running instances", AllIcons.Actions.Suspend) {
+  override fun actionPerformed(e: AnActionEvent) {
+    CPRunner.stopAll()
+  }
+
+  override fun update(e: AnActionEvent) {
+    e.presentation.isEnabled = !CPRunner.idle()
+  }
+}
+
+/**
+ * Run Problem Action
+ */
 class RunProblemNormalAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
     makeProblemFromAction(e) {
@@ -152,6 +173,9 @@ class RunProblemNormalAction : CompetitiveProgrammingAction() {
   }
 }
 
+/**
+ * Run Tests Action
+ */
 class RunProblemTestsAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
     makeProblemFromAction(e) { problem ->

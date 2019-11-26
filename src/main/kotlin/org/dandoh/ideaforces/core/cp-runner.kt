@@ -13,6 +13,11 @@ object CPRunner {
   private var processes: MutableList<Process> = mutableListOf()
 
   @Synchronized
+  fun idle() : Boolean {
+    return processes.isEmpty()
+  }
+
+  @Synchronized
   fun stopAll() {
     processes.forEach { if (it.isAlive) it.destroy() }
     processes = mutableListOf()
@@ -25,9 +30,17 @@ object CPRunner {
   }
 
   @Synchronized
-  fun startProcess(commandLine: GeneralCommandLine) : Process {
+  private fun filterProcess() {
+    processes = processes.filter { it.isAlive }.toMutableList()
+  }
+
+  @Synchronized
+  fun startProcess(commandLine: GeneralCommandLine): Process {
     val process = commandLine.createProcess()
     addProcess(process)
+    process.onExit().thenApply {
+      filterProcess()
+    }
     return process
   }
 
@@ -38,12 +51,13 @@ object CPRunner {
     addProcess(handler.process)
 
     handler.startNotify()
-    return handler.process.onExit().thenApplyAsync {
+    return handler.process.onExit().thenApply {
+      filterProcess()
       TimeUnit.MICROSECONDS.sleep(100)
       updateUI {
         consoleView.print("\nProcess exited with code ${it.exitValue()}\n", ConsoleViewContentType.SYSTEM_OUTPUT)
       }
-      return@thenApplyAsync it
+      return@thenApply it
     }
   }
 
