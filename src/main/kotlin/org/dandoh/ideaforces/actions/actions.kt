@@ -58,7 +58,7 @@ fun isCPContext(e: AnActionEvent): Boolean {
   }
 }
 
-class SpecifyURLDialog(initUrl: String?) : DialogWrapper(true) {
+class SpecifyURLDialog(initUrl: String) : DialogWrapper(true) {
   val form = SpecifyURLForm()
 
   init {
@@ -79,14 +79,8 @@ class SpecifyURLDialog(initUrl: String?) : DialogWrapper(true) {
   }
 }
 
-fun askCodeforcesURL(e: AnActionEvent): Pair<String, String>? {
-  val project = e.project ?: return null
-  val currentFile = FileEditorManager
-      .getInstance(project)
-      .selectedEditor
-      ?.file ?: return null
-  val path = currentFile.path
-  val dialog = SpecifyURLDialog(IdeaforcesService.getService().getUrl(path))
+fun askCodeforcesURL(path: String): Pair<String, String>? {
+  val dialog = SpecifyURLDialog(IdeaforcesService.getService().getUrl(path).orEmpty())
   if (dialog.showAndGet()) {
     val url = dialog.form.url.text?.trim()
     url?.let {
@@ -126,7 +120,9 @@ fun makeProblemFromAction(e: AnActionEvent, onSuccess: (ProblemSuite) -> Unit) {
         CPRunner.stopAll()
         CPRunner.startProcessWithConsole(compileCommand(file), consoleView).thenApply {
           if (it.exitValue() == 0) {
-            onSuccess(ProblemSuite(file, consoleView))
+            updateUI {
+              onSuccess(ProblemSuite(file, consoleView))
+            }
           }
         }
       }
@@ -136,7 +132,13 @@ fun makeProblemFromAction(e: AnActionEvent, onSuccess: (ProblemSuite) -> Unit) {
 
 class SpecifyCodeforcesURLAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
-    askCodeforcesURL(e)
+    val project = e.project ?: return
+    val currentFile = FileEditorManager
+        .getInstance(project)
+        .selectedEditor
+        ?.file ?: return
+    val path = currentFile.path
+    askCodeforcesURL(path)
   }
 
 }
@@ -154,7 +156,7 @@ class RunProblemTestsAction : CompetitiveProgrammingAction() {
   override fun actionPerformed(e: AnActionEvent) {
     makeProblemFromAction(e) { problem ->
       val queriedUrl = IdeaforcesService.getService().getUrl(problem.file.path)
-      val url = queriedUrl ?: askCodeforcesURL(e)?.second ?: return@makeProblemFromAction
+      val url = queriedUrl ?: askCodeforcesURL(problem.file.path)?.second ?: return@makeProblemFromAction
       thread {
         try {
           val webClient = WebClient()
@@ -162,7 +164,7 @@ class RunProblemTestsAction : CompetitiveProgrammingAction() {
           webClient.options.isCssEnabled = false
           updateUI {
             problem.console.clear()
-            problem.console.print("Fetching provided tests...", ConsoleViewContentType.SYSTEM_OUTPUT)
+            problem.console.print("Fetching provided tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
           }
           val page = webClient.getPage<HtmlPage>(url)
           val tests = page.getFirstByXPath<HtmlElement>("//div[@class='sample-tests']")
@@ -172,7 +174,6 @@ class RunProblemTestsAction : CompetitiveProgrammingAction() {
               .map { it.asText().trim() }
           val sampleTests = inputs.zip(outputs)
           updateUI {
-            problem.console.print("Done.\n", ConsoleViewContentType.SYSTEM_OUTPUT)
             problem.console.print("Running tests...\n", ConsoleViewContentType.SYSTEM_OUTPUT)
           }
           sampleTests.forEachIndexed { id, (input, output) ->
@@ -222,7 +223,7 @@ class RunProblemTestsAction : CompetitiveProgrammingAction() {
                 "connection?", ConsoleViewContentType.ERROR_OUTPUT)
           }
         }
-      }.start()
+      }
     }
   }
 
