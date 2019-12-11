@@ -27,7 +27,7 @@ import javax.swing.JComponent
 import kotlin.concurrent.thread
 import kotlin.concurrent.timerTask
 
-val codeforcesURLPattern = Regex("""(http|https)://(www\.)?codeforces\.com/contest/\d+/problem/[A-Z](\?.+=.+)?""")
+val codeforcesURLPattern = Regex("""(http|https)://(www\.)?codeforces\.com/((contest/\d+/problem)|(problemset/problem/\d+))/[A-Z](\?.+=.+)?""")
 
 fun compileCommand(file: VirtualFile): GeneralCommandLine {
   return when (file.extension) {
